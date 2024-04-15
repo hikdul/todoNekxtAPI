@@ -2,7 +2,9 @@
 
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import * as Yup from 'yup'
 
+// ** GET
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const skip = Number(searchParams.get('skip') ?? '0')
@@ -21,4 +23,40 @@ export async function GET(request: Request) {
         method: 'GET',
         data: todos
     })
+}
+
+// ** schema from yup
+
+const postSchema = Yup.object({
+    description: Yup.string().required(),
+    complete: Yup.boolean().optional().default(false),
+})
+
+// ** POST
+
+export async function POST(request: Request) {
+    
+    try {
+        
+        const {complete,description} = await postSchema.validate(await request.json()) 
+        const todo = await prisma.todo.create({data:{complete,description}})
+
+        return NextResponse.json({
+            path: 'todo/',
+            method: 'POST',
+            body: todo
+        },{
+            status: 201
+        })
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({mesage: 'Datos no controlados, verifique la informacion ingresada.'},{status:400})
+    }
+}
+
+// ? esto es solo para guiarme
+interface todoCreated{
+
+  description: string
+  complete?: boolean 
 }
